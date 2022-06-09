@@ -21,7 +21,7 @@ from prettytable import PrettyTable
 
 from tqdm import tqdm
 
-from algo.minimal_radar import ComplexRadar
+from bot.minimal_radar import ComplexRadar
 
 matplotlib.use('TkAgg')
 
@@ -56,14 +56,14 @@ class AutoPlotNsave():
 
     @staticmethod
     def compute_rsi(df, periods):
-        """[Computes Relative strength index for a given ]
+        """Computes Relative strength index for a given
 
         Args:
-            df ([type]): [description]
-            periods ([type]): [description]
+            df (data frame): contains time series
+            periods (int): rolling window period, typically 14 days
 
         Returns:
-            [type]: [description]
+            df (data frame): the returned dataframe now contains computed 'RSI' column
         """
 
         df['Up'] = df['Close'].diff().apply(lambda x: x if x > 0 else 0)
