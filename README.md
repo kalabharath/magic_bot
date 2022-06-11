@@ -12,4 +12,4 @@ Because I am looking for
 1. Potential code/idea collaborators.
 2. review and comments on my code.
 
-Please feel free to clone or generate a merge request or email me at kalabharath@gmail.com</br>
+Please feel free to clone, generate a merge request, or, email me at kalabharath@gmail.com</br>

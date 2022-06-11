@@ -21,7 +21,7 @@ from prettytable import PrettyTable
 
 from tqdm import tqdm
 
-from bot.minimal_radar import ComplexRadar
+from minimal_radar import ComplexRadar
 
 matplotlib.use('TkAgg')
 
@@ -38,8 +38,7 @@ class AutoPlotNsave():
     """
 
     def __init__(self, time_series, ticker, rsi_threshold, downside_threshold, tf_model, time_period):
-        """[summary]
-
+        """
         Args:
             time_series (dataframe):
             ticker ([type]): [description]
@@ -218,16 +217,16 @@ class AutoPlotNsave():
 
 if __name__ == '__main__':
     """
-    Summary: 
+    Summary: Parse through tickers and generate buy or a sell signal
 
         Returns:
             Table/DataFrame : specifying targets and decoys with the following datapoints
-+-------------------+----------+----------+---------------------+--------------------+
-| AI Classification |  Ticker  | Downside |     vwap_percent    |     todays_rsi     |
-+-------------------+----------+----------+---------------------+--------------------+
-|       Target      |   JSL    |  -44.37  | -30.503006540229382 | 18.550959195978393 |
-|       Decoy       |  AMBER   |  -40.65  | -24.915387442309257 | 23.092182587967315 |
-+-------------------+----------+----------+---------------------+--------------------+
+            +-------------------+----------+----------+---------------------+--------------------+
+            | AI Classification |  Ticker  | Downside |     vwap_percent    |     todays_rsi     |
+            +-------------------+----------+----------+---------------------+--------------------+
+            |       Target      |   JSL    |  -44.37  | -30.503006540229382 | 18.550959195978393 |
+            |       Decoy       |  AMBER   |  -40.65  | -24.915387442309257 | 23.092182587967315 |
+            +-------------------+----------+----------+---------------------+--------------------+
 
     """
 
@@ -239,34 +238,31 @@ if __name__ == '__main__':
     parser.add_argument('--rsi_threshold', default=40, type=int, help='Minimum rsi threshold')
     args = parser.parse_args()
 
-    current_month = str(datetime.datetime.now().month)
-    current_year = str(datetime.datetime.now().year)
-
-    pandas_fii_investments_file = "./data/" + current_month + "_" + \
-                                  current_year + "_data/" + current_month + '_fiis_' + current_year + '.pkl'
-    nse_listed_mnc = ['LINDEINDIA', 'PFIZER', 'ABBOTINDIA', 'ASTRAZEN', 'RAJESHEXPO', 'GLAXO', 'MPHASIS',
-                      'SANOFI', 'COLPAL', 'CASTROLIND', 'SIEMENS', 'OFSS', 'NESTLEIND', 'BRITANNIA', 'HONAUT',
-                      'ABB', 'BOSCHLTD', '3MINDIA', 'AKZOINDIA', 'ASAHIINDIA',
-                      'BERGEPAINT', 'CIGNITITEC', 'CLNINDIA', 'DENORA', 'CUMMINSIND', 'DICIND',
-                      'DLINKINDIA', 'ESABINDIA', 'FMGOETZE', 'FOSECOIND',
-                      'GABRIEL', 'GILLETTE', 'GOODYEAR', 'GPPL', 'HEIDELBERG', 'HONDAPOWER',
-                      'INDNIPPON', 'INDOTECH', 'INGERRAND', 'ITDCEM', 'KENNAMET', 'KOKUYOCMLN',
-                      'KSB', 'LUMAXIND', 'MOTHERSUMI', 'MPHASIS', 'NOVARTIND',
-                      'PAGEIND', 'SHREYAS', 'SKFINDIA',
-                      'SMLISUZU', 'TIMKEN', 'VESUVIUS', 'HDFCAMC', 'VEDL']
+    # load the tensor flow model for inference
 
     tf_file = './tf_model/target_pattern2022GC.h5'
+    model = tf.keras.models.load_model(tf_file)
+
+    # load the tickers to invest in
+    """
+    pandas_fii_investments_file = 'test.pkl'
+    
     fii_data = pd.read_pickle(pandas_fii_investments_file)
     print(fii_data)
-    model = tf.keras.models.load_model(tf_file)
-    today_1 = datetime.date.today()
+
+    
     exclude_sectors = ['Banks', 'Bank', 'Finance', 'Insurance']  # these sectors have no tangible assets
 
     for exclude_sector in exclude_sectors:
         fii_data.drop(fii_data.loc[fii_data['sectors'] == exclude_sector].index, inplace=True)
 
     ticker_symbols = fii_data['ticker'].to_list()
-    ticker_symbols = ticker_symbols + nse_listed_mnc
+    ticker_symbols = ticker_symbols 
+    """
+    current_month = str(datetime.datetime.now().month)
+    current_year = str(datetime.datetime.now().year)
+    today_1 = datetime.date.today()
+    ticker_symbols = ['BNTX', 'MRNA', 'PFE', 'NVAX', 'FB' ]
     ticker_symbols = sorted(ticker_symbols)  # sort alphabetically!
     print(ticker_symbols, len(ticker_symbols))
     data_return = []
@@ -276,7 +272,7 @@ if __name__ == '__main__':
         if company.isdigit():
             continue
         start_date = today_1 - datetime.timedelta(days=((args.time_period) + 1) * 30)
-        t = yf.Ticker(company + '.NS')
+        t = yf.Ticker(company)
         time_series_data = t.history(start=start_date, interval="1d")
         plot = AutoPlotNsave(time_series=time_series_data, ticker=company, rsi_threshold=args.rsi_threshold,
                              downside_threshold=args.downside_threshold, tf_model=model, time_period=args.time_period)
