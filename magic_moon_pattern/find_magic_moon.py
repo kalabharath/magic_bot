@@ -188,30 +188,14 @@ class ManualPlotNsave():
 
 
 if __name__ == '__main__':
-    data_dump_path = './5y_to_date_data/'
-    pandas_fii_investments_file = "../fii_investments/fiis_2020.pkl"
-    fii_data = pd.read_pickle(pandas_fii_investments_file)
 
-    #ticker_symbols = fii_data['ticker'].to_list()
     ticker_symbols= ['PFE']
-    for company in ticker_symbols:
-        file_path = glob.glob(data_dump_path+str(company)+"*.pkl")
-        if len(file_path) == 0:
-            continue
-        else:
-            file_path = file_path[0]
-
-        print(company, file_path)
-        if os.path.isfile(file_path):
-            pass
-        else:
-            continue
-
-        time_series_data = pd.read_pickle(file_path)
+    for ticker in ticker_symbols:
+        time_series_data = pd.read_pickle('./PFE_11_Jun_2022.pkl')
         # compute a rolling window time series
         r_utick =  random.randint(0, 15)
         r_rsi = random.randint(30, 70)
         plot = ManualPlotNsave(check_point_file="point_save.pkl", time_series=time_series_data, trailing_time_period='5Mo', forward_time_period='2Mo',
-                               uptick_threshold=r_utick, ticker=company, rsi_threshold=r_rsi)
+                               uptick_threshold=r_utick, ticker=ticker, rsi_threshold=r_rsi)
 
         plot.cufflinks_display()
