@@ -8,6 +8,11 @@ from robin_buy_bot import *
 import robin_stocks
 import yfinance as yf
 
+
+def sell_option():
+    return True
+
+
 if __name__ == '__main__':
     # login to robinhood
     # save username and passowrd in an encrypted file and exclude from git
@@ -39,6 +44,8 @@ if __name__ == '__main__':
         """
 
         market_data_for_the_option = robin_stocks.robinhood.get_option_market_data_by_id(id=position['option_id'])
+        quantity = float(position['quantity'])
+        quantity = int(quantity)
         print(market_data_for_the_option)
 
         """
@@ -59,9 +66,8 @@ if __name__ == '__main__':
         """
 
         # calculate profit/loss
-        purchase_price = float(position['average_price']) * float(position['quantity'])
-        current_price = float(market_data_for_the_option[0]['adjusted_mark_price_round_down']) * 100 * float(
-            position['quantity'])
+        purchase_price = float(position['average_price']) * quantity
+        current_price = float(market_data_for_the_option[0]['adjusted_mark_price_round_down']) * 100 * quantity
         percentage_pl = ((current_price - purchase_price) / purchase_price) * 100
         print("percentage_pl", percentage_pl)
 
@@ -80,21 +86,34 @@ if __name__ == '__main__':
         upside = round(daily_percent_change.max(), 2)
 
         # 2. check if it is halfway to expiry date
-        expiry_date = robin_stocks.robinhood.get_option_instrument_data_by_id(id=position['option_id'])[
-            'expiration_date']
+        option_data = robin_stocks.robinhood.get_option_instrument_data_by_id(id=position['option_id'])
+        expiry_date = option_data['expiration_date']
+        strike_price = option_data['strike_price']
+        tick_multiple = randint(1, 3)
+        sell_price = float(market_data_for_the_option[0]['ask_price']) - (
+                    tick_multiple * float(option_data['min_ticks']['below_tick']))
 
         days_to_expiry = (datetime.strptime(expiry_date, '%Y-%m-%d') - datetime.strptime(purchase_date,
-                                                                                          '%Y-%m-%d')).days
+                                                                                         '%Y-%m-%d')).days
         days_lapsed_so_far = (evaluation_date - datetime.strptime(purchase_date, '%Y-%m-%d')).days
 
-        # check for 52-week highs
-
-
-
-
-        if downside <= -15.0: # if the underlying stock dropped 15% or more, stop_loss to prevent a loss
-            pass  # sell the option
+        # 3. check for option profits threshold
+        sell_option = False
+        if downside <= -15.0:  # if the underlying stock dropped 15% or more, stop_loss to prevent a loss
+            sell_option = True
+            print ("sell_option: -", sell_option, 'Hit the underlying stock drop 15% or more')
         elif days_to_expiry / days_lapsed_so_far <= 2:
-            pass  # sell the option
+            print ("sell_option: -", sell_option, 'Hit the halfway to expiry date')
+            sell_option = True
+        elif percentage_pl >= 500:  # if the option has made 500% profit, sell it
+            print ("sell_option: -", sell_option, 'Hit the option profit threshold')
+            sell_option = True
         else:
-            pass
+            print ("sell_option: -", sell_option, 'No sell criteria met')
+            sell_option = False
+
+        if sell_option:
+            sell = robin_stocks.robinhood.order_sell_option_limit(positionEffect="close", creditOrDebit="credit",
+                                                                  price=sell_price, symbol=ticker, quantity=quantity,
+                                                                  expiry_date=expiry_date, strike=strike_price,
+                                                                  optionType="call", timeInForce="gfd")
