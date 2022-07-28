@@ -217,18 +217,18 @@ class AutoPlotNsave():
 
 if __name__ == '__main__':
     """
-    Summary: Parse through tickers and generate buy or a sell signal
+        Summary: Parse through tickers and generate buy or a sell signal
 
-        Returns:
-            Table/DataFrame : specifying targets and decoys with the following datapoints
-            +-------------------+----------+----------+---------------------+--------------------+
-            | AI Classification |  Ticker  | Downside |     vwap_percent    |     todays_rsi     |
-            +-------------------+----------+----------+---------------------+--------------------+
-            |       Target      |   JSL    |  -44.37  | -30.503006540229382 | 18.550959195978393 |
-            |       Decoy       |  AMBER   |  -40.65  | -24.915387442309257 | 23.092182587967315 |
-            +-------------------+----------+----------+---------------------+--------------------+
+            Returns:
+                Table/DataFrame : specifying targets and decoys with the following datapoints
+                +-------------------+----------+----------+---------------------+--------------------+
+                | AI Classification |  Ticker  | Downside |     vwap_percent    |     todays_rsi     |
+                +-------------------+----------+----------+---------------------+--------------------+
+                |       Target      |   JSL    |  -44.37  | -30.503006540229382 | 18.550959195978393 |
+                |       Decoy       |  AMBER   |  -40.65  | -24.915387442309257 | 23.092182587967315 |
+                +-------------------+----------+----------+---------------------+--------------------+
 
-    """
+        """
 
     parser = argparse.ArgumentParser(description='Magic formula for NASDAQ and NYSE')
 
@@ -240,29 +240,22 @@ if __name__ == '__main__':
 
     # load the tensor flow model for inference
 
-    tf_file = './tf_model/target_pattern2022GC.h5'
+    tf_file = '../working_tf_model/tf_moon_pattern_v1.h5'
     model = tf.keras.models.load_model(tf_file)
 
     # load the tickers to invest in
-    """
-    pandas_fii_investments_file = 'test.pkl'
-    
+
+    pandas_fii_investments_file = './robin_screener_data2022-07-19.pkl'
+
     fii_data = pd.read_pickle(pandas_fii_investments_file)
     print(fii_data)
 
-    
-    exclude_sectors = ['Banks', 'Bank', 'Finance', 'Insurance']  # these sectors have no tangible assets
+    ticker_symbols = fii_data['Ticker'].to_list()
+    ticker_symbols = ticker_symbols
 
-    for exclude_sector in exclude_sectors:
-        fii_data.drop(fii_data.loc[fii_data['sectors'] == exclude_sector].index, inplace=True)
-
-    ticker_symbols = fii_data['ticker'].to_list()
-    ticker_symbols = ticker_symbols 
-    """
     current_month = str(datetime.datetime.now().month)
     current_year = str(datetime.datetime.now().year)
     today_1 = datetime.date.today()
-    ticker_symbols = ['BNTX', 'MRNA', 'PFE', 'NVAX', 'FB' ]
     ticker_symbols = sorted(ticker_symbols)  # sort alphabetically!
     print(ticker_symbols, len(ticker_symbols))
     data_return = []

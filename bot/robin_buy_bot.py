@@ -1,3 +1,4 @@
+from logger_setup import *
 from datetime import datetime
 from random import gauss, random, randint
 from time import sleep
@@ -35,7 +36,9 @@ def pause_execution():
 
 # main
 if __name__ == '__main__':
-
+    logger.info("##############################################################################")
+    logger.info("######################*****Robin Buy Bot*****############################")
+    logger.info("##############################################################################")
     """
     # options trading strategy
     1. Select an option that's 3 months away.
@@ -46,9 +49,13 @@ if __name__ == '__main__':
     # save username and passowrd in an encrypted file and exclude from git
     username, password, otp_secret = get_credentials()
     totp = pyotp.TOTP(otp_secret).now()
-    print('6digit_code', totp)
+    logger.info("6 digit TOTP: {}".format(totp))
+    # print('6digit_code', totp)
     login = robin_stocks.robinhood.login(username=username, password=password, mfa_code=totp)
-    ticker = 'BNTX'
+    ticker = 'ISRG'
+
+
+
     """
     # options trading strategy
     1. Select an option that's 3 months away
@@ -77,7 +84,8 @@ if __name__ == '__main__':
     # get current market price
     current_market_price = robin_stocks.robinhood.markets.get_latest_price(ticker)
     current_market_price = float(current_market_price[0])
-    print('current market price - ', current_market_price)
+    # print('current market price - ', current_market_price)
+    logger.info("current market price - {}".format(current_market_price))
 
     """
     # options trading strategy
@@ -95,19 +103,23 @@ if __name__ == '__main__':
     # to define quantity, get account balance
 
     profile_info = robin_stocks.robinhood.profiles.load_account_profile(info=None)
-    print (profile_info)
+    # print (profile_info)
+    logger.info("profile_info - {}".format(profile_info))
     buying_power = profile_info['buying_power']
-    print ('buying power - ', buying_power)
+    # print ('buying power - ', buying_power)
+    logger.info("buying power - {}".format(buying_power))
     # get the 20% of buying power
     buying_power = round(float(buying_power) * 0.2, 2)
-    print (' 20% of buying power - ', buying_power)
-
+    # print (' 20% of buying power - ', buying_power)
+    logger.info("20% of buying power - {}".format(buying_power))
     # create a vertical spread
     for i in range(0, 4):
         # extract value that is 20-30 percent out of strike price
         otm_data_at_strike_price = df2.iloc[i]
-        print(otm_data_at_strike_price)
-        print('otm stricke price -', otm_strike_price)
+        # print(otm_data_at_strike_price)
+        logger.info("otm_data_at_strike_price - {}".format(otm_data_at_strike_price))
+        # print('otm stricke price -', otm_strike_price)
+        logger.info("otm stricke price - {}".format(otm_strike_price))
         tick_multiple = randint(1, 3)
         ask_price = otm_data_at_strike_price['bid_price'] + tick_multiple * (
             float(otm_data_at_strike_price['min_ticks']['above_tick']))
@@ -116,9 +128,15 @@ if __name__ == '__main__':
         # buying power for the current trade that defines the quantity
         t_buying_power = buying_power/ float(len(range(0, 4)))
         quantity = t_buying_power / ask_price
+        quantity = int(quantity)
+        if quantity <=0:
+            # print ('Not enough buying power to buy')
+            logger.info("Not enough buying power to buy")
+            continue
 
-        print('ask price - ', ask_price, 'expiration_date -', last_friday, ' Strike_price -',
-              otm_data_at_strike_price['strike_price'])
+
+        # print('ask price - ', ask_price, 'expiration_date -', last_friday, ' Strike_price -',  otm_data_at_strike_price['strike_price'])
+
         order_conformation = robin_stocks.robinhood.orders.order_buy_option_limit(positionEffect='open',
                                                                                   creditOrDebit='debit',
                                                                                   price=ask_price, symbol=ticker,
@@ -128,7 +146,8 @@ if __name__ == '__main__':
                                                                                       'strike_price'],
                                                                                   optionType='call',
                                                                                   timeInForce='gfd', jsonify=True)
-        print(order_conformation)
+        # print(order_conformation)
+        logger.info("order_conformation - {}".format(order_conformation))
         pause_execution() # wait for a fair bit of human mimicking time to place next order
 
         """

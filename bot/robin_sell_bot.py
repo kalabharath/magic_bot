@@ -1,33 +1,25 @@
-from datetime import datetime
-from random import gauss, random, randint
-from time import sleep
-import numpy as np
-import pandas as pd
-from dateutil.relativedelta import FR, relativedelta
-from robin_buy_bot import *
+from logger_setup import *
 import robin_stocks
 import yfinance as yf
-
-
-def sell_option():
-    return True
+from robin_buy_bot import *
 
 
 if __name__ == '__main__':
+    logger.info("##############################################################################")
+    logger.info("######################*******Robin Sell Bot*******############################")
+    logger.info("##############################################################################")
     # login to robinhood
     # save username and passowrd in an encrypted file and exclude from git
     username, password, otp_secret = get_credentials()
     totp = pyotp.TOTP(otp_secret).now()
-    print('6 digit_code', totp)
+    logger.info("TOTP: {}".format(totp))
     login = robin_stocks.robinhood.login(username=username, password=password, mfa_code=totp)
-    print("logged in to robinhood")
+    logger.info("Login status: {}".format(login))
 
     # get account positions
-    # positions = robin_stocks.robinhood.get_all_positions()
     positions = robin_stocks.robinhood.options.get_open_option_positions()
-    # print("got positions", positions)
     for position in positions:
-        print(position)
+        logger.info("Position: {}".format(position))
         """
         position = {'account': 'https://api.robinhood.com/accounts/883363160/', 'average_price': '190.2500',
                     'chain_id': '32d41003-5e1a-4e6f-96ae-b74b733809f1', 'chain_symbol': 'BNTX',
@@ -46,8 +38,8 @@ if __name__ == '__main__':
         market_data_for_the_option = robin_stocks.robinhood.get_option_market_data_by_id(id=position['option_id'])
         quantity = float(position['quantity'])
         quantity = int(quantity)
-        print(market_data_for_the_option)
-
+        # print(market_data_for_the_option)
+        logger.info("Market data for the option: {}".format(market_data_for_the_option))
         """
         market_data_for_the_option = [
             {'adjusted_mark_price': '1.350000', 'adjusted_mark_price_round_down': '1.350000', 'ask_price': '1.500000',
@@ -69,8 +61,8 @@ if __name__ == '__main__':
         purchase_price = float(position['average_price']) * quantity
         current_price = float(market_data_for_the_option[0]['adjusted_mark_price_round_down']) * 100 * quantity
         percentage_pl = ((current_price - purchase_price) / purchase_price) * 100
-        print("percentage_pl", percentage_pl)
-
+        # print("percentage_pl", percentage_pl)
+        logger.info("percentage_pl: {}".format(percentage_pl))
         # decide to sell or not
         # 1. check if the underlying stock has 15% correction from the peak price
         tdate = position['created_at']
@@ -101,15 +93,23 @@ if __name__ == '__main__':
         sell_option = False
         if downside <= -15.0:  # if the underlying stock dropped 15% or more, stop_loss to prevent a loss
             sell_option = True
-            print ("sell_option: -", sell_option, 'Hit the underlying stock drop 15% or more')
+            # print ("sell_option: -", sell_option, 'Hit the underlying stock drop 15% or more')
+            logger.info("Hit the underlying stock drop 15% or more")
+            logger.info("sell_option: - {}".format(sell_option))
         elif days_to_expiry / days_lapsed_so_far <= 2:
-            print ("sell_option: -", sell_option, 'Hit the halfway to expiry date')
+            # print ("sell_option: -", sell_option, 'Hit the halfway to expiry date')
+            logger.info("sell_option: - {}".format(sell_option))
+            logger.info("Hit the halfway to expiry date")
             sell_option = True
-        elif percentage_pl >= 500:  # if the option has made 500% profit, sell it
-            print ("sell_option: -", sell_option, 'Hit the option profit threshold')
+        elif percentage_pl >= 50:  # if the option has made 50% profit, sell it
+            # print ("sell_option: -", sell_option, 'Hit the option profit threshold')
+            logger.info("Hit the option profit threshold")
+            logger.info("sell_option: - {}".format(sell_option))
             sell_option = True
         else:
-            print ("sell_option: -", sell_option, 'No sell criteria met')
+            # print ("sell_option: -", sell_option, 'No sell criteria met')
+            logger.info("No sell criteria met")
+            logger.info("sell_option: - {}".format(sell_option))
             sell_option = False
 
         if sell_option:
@@ -117,3 +117,4 @@ if __name__ == '__main__':
                                                                   price=sell_price, symbol=ticker, quantity=quantity,
                                                                   expiry_date=expiry_date, strike=strike_price,
                                                                   optionType="call", timeInForce="gfd")
+        pause_execution()

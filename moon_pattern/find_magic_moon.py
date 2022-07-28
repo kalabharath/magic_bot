@@ -156,6 +156,7 @@ class ManualPlotNsave():
         :return: boolean
         """
         threshold_days = self.get_unusual_volume_days()
+        print (threshold_days)
         dump_image = False
         for i in range(0, len(self.time_series.index) - self.total_days):
             start = self.time_series.index[i]
@@ -200,6 +201,7 @@ class ManualPlotNsave():
 
             # make a radar plot
             data = data.loc[start:evaluation_date]
+            print ('Min data points :- ',len(data.index))
             vwap = data['vwap'].to_numpy()
             rsi = data['rsi_3'].to_numpy()
             s_rsi = minmax_scale(rsi, feature_range=(0, 1))
