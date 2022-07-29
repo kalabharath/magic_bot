@@ -2,7 +2,7 @@ from logger_setup import *
 import robin_stocks
 import yfinance as yf
 from robin_buy_bot import *
-
+from initiate_bots import pause_execution
 
 if __name__ == '__main__':
     logger.info("##############################################################################")
@@ -115,6 +115,6 @@ if __name__ == '__main__':
         if sell_option:
             sell = robin_stocks.robinhood.order_sell_option_limit(positionEffect="close", creditOrDebit="credit",
                                                                   price=sell_price, symbol=ticker, quantity=quantity,
-                                                                  expiry_date=expiry_date, strike=strike_price,
+                                                                  expirationDate=expiry_date, strike=strike_price,
                                                                   optionType="call", timeInForce="gfd")
         pause_execution()

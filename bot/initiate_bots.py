@@ -19,26 +19,28 @@ def run_screener():
     Run the robin screener bot
     :return:
     """
-    pause_execution()
+
     os.system('python robin_screener_bot.py')
     return True
+
 
 def run_robin_inference_bot():
     """
     Run the robin inference bot
     :return:
     """
-    pause_execution()
+
     os.system('python robin_AI_inference_bot.py')
     return True
+
 
 def run_robin_buy_bot():
     """
     Run the robin buy bot
     :return:
     """
-    pause_execution()
     os.system('python robin_buy_bot.py')
+    pause_execution()
     return True
 
 
@@ -47,7 +49,6 @@ def run_robin_sell_bot():
     Run the robin sell bot
     :return:
     """
-    pause_execution()
     os.system('python robin_sell_bot.py')
     return True
 

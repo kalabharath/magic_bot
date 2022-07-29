@@ -3,6 +3,7 @@ import tensorflow as tf
 import yfinance as yf
 from keras_preprocessing import image
 from tqdm import tqdm
+import pickle
 import glob
 import os
 import argparse
@@ -49,11 +50,10 @@ def reduce_array(arr, time_frame=1):
             np.pad(arr.astype(float), (0, time_frame - arr.size % time_frame), mode='constant',
                    constant_values=np.NaN).reshape(-1, time_frame),
             axis=1)
-
     return t
 
 
-def generate_daily_summary(ticker='ticker', output_file_preix='output_pdf_test'):
+def generate_daily_summary(output_file_preix='output_pdf_test'):
     """
     Integrate and merge two images into one and generate a daily summary of the data.
     :param output_file_preix:
@@ -61,56 +61,43 @@ def generate_daily_summary(ticker='ticker', output_file_preix='output_pdf_test')
     """
 
     out_pdf_string = ''
-    for (radar_img, candle_img) in zip(sorted(glob.glob(ticker + "*radar*.png"), key=os.path.getmtime),
-                                       sorted(glob.glob(ticker + "*candle*.png"), key=os.path.getmtime)):
+    for (radar_img, candle_img) in zip(sorted(glob.glob("*radar*.png"), key=os.path.getmtime),
+                                       sorted(glob.glob("*candle*.png"), key=os.path.getmtime)):
         radar = Image.open(radar_img)
         background = Image.open(candle_img)
         background.paste(radar, box=(1900, 10))
         background.save(candle_img)
         out_pdf_string = out_pdf_string + ' ' + candle_img
-    os.system('convert ' + out_pdf_string + ' ' + output_file_preix + '.pdf')
-    # os.system('open ' + output_file_preix + '.pdf')
-
+    os.system('convert ' + out_pdf_string + ' ' + output_file_preix + '.pdf && rm *.png')
+    os.system('open ' + output_file_preix + '.pdf')
     return True
 
 
 class ManualPlotNsave():
     """
-    Supervised selection of 3-month period stock with stock reaching the lowest before a 10% intra-day bump
-    and continues exponential climbing.
-    1. Displays the gradual drop of stock prices in a three month period where the the normalized 'RSI' and
-    'ATR' or 'VWAP" reaches zero.
-    2. Draw the support and resistance lines.
-    3. Draw the entry and exit prices at 1:3 risk to reward profile.
-    4. Save the profile if steps 1-3 above were true.
+
     """
 
-    def __init__(self, check_point_file, time_series, trailing_time_period, forward_time_period, uptick_threshold,
-                 ticker, rsi_threshold):
+    def __init__(self, check_point_file, time_series, trailing_time_period, forward_time_period,
+                 ticker):
         """
-
         :param check_point_file:
         :param time_series:
         :param trailing_time_period:
         :param forward_time_period:
-        :param uptick_threshold:
         :param ticker:
-        :param rsi_threshold:
         """
         self.check_point_file = check_point_file
         self.time_series = time_series
-        self.uptick_threhold = uptick_threshold
         self.ticker = ticker
-        self.rsi_threshold = rsi_threshold
         self.total_days = int(trailing_time_period[0]) * 22
         self.forward_days = int(forward_time_period[0]) * 22
 
     def get_unusual_volume_days(self, unusual_volume_sigma=5.0):
         """
-
-        :return:
+        :return: boolean
         """
-        unusual_volume_days = []
+
         copy_of_time_series = self.time_series.copy(deep=True)
 
         start = copy_of_time_series.index[-23]  # this has to be a specific index but what is it ?
@@ -133,9 +120,9 @@ class ManualPlotNsave():
         # check if the evaluation date volume is unusually higher than average volume
         last_3_days_volume = copy_of_time_series.loc[stop:day_before_evaluation_date, 'Volume'].mean()
 
-        if last_3_days_volume > (
-                avg_volume + (unusual_volume_sigma * std_volume)):
-
+        # if last_3_days_volume > (
+        #         avg_volume + (unusual_volume_sigma * std_volume)):
+        if last_3_days_volume > unusual_volume_sigma * avg_volume:
             logger.info("Volume is unusually high: %s "% self.ticker)
             logger.info("Unusual volume ratio is %s" % str(int(last_3_days_volume/avg_volume)))
 
@@ -255,9 +242,12 @@ if __name__ == '__main__':
     model = tf.keras.models.load_model(tf_file)
 
     # load the tickers to invest in
-    pandas_fii_investments_file = './robin_screener_data2022-07-19.pkl'
+    today = str(pd.Timestamp.today().date())
+    today_1 = datetime.date.today()
+    pandas_fii_investments_file = './robin_screener_data'+today+'.pkl'
 
     fii_data = pd.read_pickle(pandas_fii_investments_file)
+    todays_hits = []
     # print all rows of a dataframe
     logger.info("##############################################################################")
     logger.info("####################*****Robin AI Inference Bot*****##########################")
@@ -277,13 +267,18 @@ if __name__ == '__main__':
     for i in tqdm(range(len(ticker_symbols))):
         ticker = ticker_symbols[i]
 
-        start_date = today_1 - datetime.timedelta(days=((args.time_period) + 1) * 60)
+        start_date = today_1 - datetime.timedelta(days=(args.time_period + 1) * 60)
         t = yf.Ticker(ticker)
         time_series_data = t.history(start=start_date, interval="1d")
-        r_utick = 28
+
         plot = ManualPlotNsave(check_point_file="point_save.pkl", time_series=time_series_data,
                                trailing_time_period='3Mo', forward_time_period='2Mo',
-                               uptick_threshold=r_utick, ticker=ticker, rsi_threshold=100)
+                               ticker=ticker)
 
         if plot.cufflinks_display():
-            generate_daily_summary(ticker=ticker, output_file_preix= ticker+'_summary')
+            todays_hits.append(ticker)
+
+    # save the data to a file
+    with open('todays_hits_'+today+'.pkl', 'wb') as f:
+        pickle.dump(todays_hits, f)
+    generate_daily_summary(output_file_preix='Summary_'+today)
